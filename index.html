@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>データ浪費ツール</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    input, button { font-size: 16px; padding: 8px; margin: 5px; }
+    #status { margin-top: 20px; font-size: 20px; }
+  </style>
+</head>
+<body>
+  <h1>モバイル通信を浪費しよう！</h1>
+  <p>
+    浪費したい容量を入力してください（単位: MB、0 = 無限）：
+  </p>
+  <input type="number" id="mbInput" value="100">
+  <br>
+  <button onclick="startWasting()">スタート</button>
+  <button onclick="stopWasting()">ストップ</button>
+
+  <div id="status">0 MB 浪費済み</div>
+
+  <script>
+    let wastedBytes = 0;
+    let isRunning = false;
+    let targetMB = 0;
+    const oneMB = 1024 * 1024;
+
+    function generateRandomBlob(size) {
+      const array = new Uint8Array(size);
+      crypto.getRandomValues(array); // 安全なランダム値でバイナリ生成
+      return new Blob([array]);
+    }
+
+    async function sendWaste(size) {
+      const blob = generateRandomBlob(size);
+      try {
+        await fetch("https://httpbin.org/post", {
+          method: "POST",
+          body: blob,
+        });
+      } catch (e) {
+        console.error("送信失敗:", e);
+      }
+      return blob.size;
+    }
+
+    async function startWasting() {
+      if (isRunning) return;
+      isRunning = true;
+      targetMB = parseInt(document.getElementById("mbInput").value);
+      wastedBytes = 0;
+      const chunkSize = oneMB * 5; // 5MBごとに送信
+      const parallel = 4; // 並列4通信（調整可）
+
+      while (isRunning && (targetMB === 0 || wastedBytes < targetMB * oneMB)) {
+        const promises = [];
+        for (let i = 0; i < parallel; i++) {
+          promises.push(sendWaste(chunkSize));
+        }
+        const sizes = await Promise.all(promises);
+        wastedBytes += sizes.reduce((sum, s) => sum + s, 0);
+        document.getElementById("status").innerText =
+          `${(wastedBytes / oneMB).toFixed(2)} MB 浪費済み`;
+      }
+    }
+
+    function stopWasting() {
+      isRunning = false;
+    }
+  </script>
+</body>
+</html>
