@@ -11,6 +11,7 @@
 </head>
 <body>
   <h1>モバイル通信を浪費しよう！</h1>
+
   <p>浪費したい容量を入力してください（単位: MB、0 = 無限）：</p>
   <input type="number" id="mbInput" value="100" min="0" step="1" />
   <br />
@@ -25,7 +26,6 @@
     let isRunning = false;
     let targetMB = 0;
 
-    // 指定サイズのランダムバイトBlobを作る（65536byteずつ分割）
     function generateRandomBlob(size) {
       const maxChunk = 65536;
       const chunks = [];
@@ -39,7 +39,6 @@
       return new Blob(chunks);
     }
 
-    // 指定サイズを浪費（送信）する関数
     async function sendWaste(size) {
       const blob = generateRandomBlob(size);
       try {
@@ -53,7 +52,6 @@
       return blob.size;
     }
 
-    // 浪費開始
     async function startWasting() {
       if (isRunning) return;
       isRunning = true;
@@ -61,7 +59,6 @@
       targetMB = parseInt(document.getElementById("mbInput").value) || 0;
 
       const chunkSize = 10 * 1024; // 10KB
-      const chunkMB = chunkSize / oneMB;
 
       document.getElementById("status").innerText = `0.00 MB 浪費済み`;
 
@@ -80,7 +77,6 @@
       }
     }
 
-    // 浪費停止
     function stopWasting() {
       isRunning = false;
     }
