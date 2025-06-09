@@ -67,16 +67,18 @@
       document.getElementById("status").innerText = `0.00 MB 浪費済み`;
 
       while (isRunning && (targetMB === 0 || wastedBytes < targetMB * oneMB)) {
-        const promises = [];
-        for (let i = 0; i < parallel; i++) {
-          promises.push(sendWaste(chunkSize));
-        }
-        const sizes = await Promise.all(promises);
-        wastedBytes += sizes.reduce((sum, s) => sum + s, 0);
+  const promises = [];
+  for (let i = 0; i < parallel; i++) {
+    promises.push(sendWaste(chunkSize));
+  }
+  const sizes = await Promise.all(promises);
+  wastedBytes += sizes.reduce((sum, s) => sum + s, 0);
+  document.getElementById("status").innerText =
+    `${(wastedBytes / oneMB).toFixed(2)} MB 浪費済み`;
 
-        document.getElementById("status").innerText =
-          `${(wastedBytes / oneMB).toFixed(2)} MB 浪費済み`;
-      }
+  // 🔽 ここで100ms待つ（速すぎるのを少し抑える）
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
 
       if (!isRunning) {
         document.getElementById("status").innerText += " ▶ 停止しました";
