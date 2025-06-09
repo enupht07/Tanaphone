@@ -28,10 +28,20 @@
     const oneMB = 1024 * 1024;
 
     function generateRandomBlob(size) {
-      const array = new Uint8Array(size);
-      crypto.getRandomValues(array); // 安全なランダム値でバイナリ生成
-      return new Blob([array]);
-    }
+  const maxChunk = 65536; // crypto.getRandomValues の上限
+  const chunks = [];
+
+  while (size > 0) {
+    const chunkSize = Math.min(size, maxChunk);
+    const array = new Uint8Array(chunkSize);
+    crypto.getRandomValues(array);
+    chunks.push(array);
+    size -= chunkSize;
+  }
+
+  return new Blob(chunks);
+}
+
 
     async function sendWaste(size) {
       const blob = generateRandomBlob(size);
