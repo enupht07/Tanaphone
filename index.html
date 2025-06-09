@@ -61,8 +61,8 @@
       wastedBytes = 0;
       targetMB = parseInt(document.getElementById("mbInput").value) || 0;
 
-      const chunkSize = 0.01 * oneMB; // 1MB
-      const parallel = 1;          // 並列20送信
+      const chunkSize = 5 * oneMB; // 1MB
+      const parallel = 20;          // 並列20送信
 
       document.getElementById("status").innerText = `0.00 MB 浪費済み`;
 
