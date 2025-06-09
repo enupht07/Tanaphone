@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Tanaphone - データ浪費装置</title>
+  <meta charset="UTF-8" />
+  <title>データ浪費ツール</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #fefefe;
-      text-align: center;
-      padding: 50px;
-    }
-    button {
-      padding: 1em 2em;
-      font-size: 1.2em;
-      margin: 10px;
-      cursor: pointer;
-    }
-    #status {
-      font-size: 1.5em;
-      margin-top: 30px;
-      color: #333;
-    }
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    input, button { font-size: 16px; padding: 8px; margin: 5px; }
+    #status { margin-top: 20px; font-size: 20px; }
   </style>
 </head>
 <body>
-  <h1>Tanaphone - データを無駄に浪費しよう</h1>
+  <h1>モバイル通信を浪費しよう！</h1>
+  <p>浪費したい容量を入力してください（単位: MB、0 = 無限）：</p>
+  <input type="number" id="mbInput" value="100" min="0" step="1" />
+  <br />
   <button onclick="startWasting()">スタート</button>
   <button onclick="stopWasting()">ストップ</button>
-  <div id="status">まだデータは浪費していません。</div>
+
+  <div id="status">0.00 MB 浪費済み</div>
 
   <script>
-    let wasting = false;
-    let wasted = 0; // バイト単位
+    const oneMB = 1024 * 1024;
+    let wastedBytes = 0;
+    let isRunning = false;
+    let targetMB = 0;
 
+    // 指定サイズのランダムバイトBlobを作る（65536byteずつ分割）
     function generateRandomBlob(size) {
       const maxChunk = 65536;
       const chunks = [];
@@ -46,37 +39,50 @@
       return new Blob(chunks);
     }
 
-    function sendWaste() {
-      const size = 1024 * 10; // 10KB（= 0.0097MB）
+    // 指定サイズを浪費（送信）する関数
+    async function sendWaste(size) {
       const blob = generateRandomBlob(size);
-
-      fetch("https://httpbin.org/post", {
-        method: "POST",
-        body: blob,
-      }).then(() => {
-        wasted += size;
-        const wastedMB = (wasted / (1024 * 1024)).toFixed(2);
-        document.getElementById("status").textContent = `合計 ${wastedMB} MB 浪費中…`;
-
-        if (wasting) setTimeout(sendWaste, 200); // 約5回/sec
-      }).catch(err => {
-        console.error("送信失敗:", err);
-        if (wasting) setTimeout(sendWaste, 500);
-      });
+      try {
+        await fetch("https://httpbin.org/post", {
+          method: "POST",
+          body: blob,
+        });
+      } catch (e) {
+        console.error("送信失敗:", e);
+      }
+      return blob.size;
     }
 
-    function startWasting() {
-      if (!wasting) {
-        wasting = true;
-        wasted = 0;
-        document.getElementById("status").textContent = "浪費開始…";
-        sendWaste();
+    // 浪費開始
+    async function startWasting() {
+      if (isRunning) return;
+      isRunning = true;
+      wastedBytes = 0;
+      targetMB = parseInt(document.getElementById("mbInput").value) || 0;
+
+      const chunkSize = 10 * 1024; // 10KB
+      const chunkMB = chunkSize / oneMB;
+
+      document.getElementById("status").innerText = `0.00 MB 浪費済み`;
+
+      while (isRunning && (targetMB === 0 || wastedBytes < targetMB * oneMB)) {
+        const sizeSent = await sendWaste(chunkSize);
+        wastedBytes += sizeSent;
+        document.getElementById("status").innerText =
+          `${(wastedBytes / oneMB).toFixed(2)} MB 浪費済み`;
+      }
+
+      if (!isRunning) {
+        document.getElementById("status").innerText += " ▶ 停止しました";
+      } else {
+        document.getElementById("status").innerText += " ▶ 完了しました";
+        isRunning = false;
       }
     }
 
+    // 浪費停止
     function stopWasting() {
-      wasting = false;
-      document.getElementById("status").textContent += " ▶ 停止しました";
+      isRunning = false;
     }
   </script>
 </body>
